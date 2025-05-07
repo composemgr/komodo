@@ -2,14 +2,12 @@
 name: komodo
 services:
   db:
-    image: mongo
+    image: mongo:latest
     command: --quiet --wiredTigerCacheSizeGB 0.25
     restart: always
     pull_policy: always
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
-    # ports:
-    #   - 27017:27017
     volumes:
       - mongo-data:/data/db
       - mongo-config:/data/configdb
@@ -17,16 +15,17 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${DB_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
     networks:
-      - default
+      - komodo
+    labels:
+      komodo.skip:
+      
   core:
     image: ghcr.io/mbecker20/komodo:${COMPOSE_KOMODO_IMAGE_TAG:-latest}
-    restart: unless-stopped
+    restart: always
     depends_on:
-      - mongo
+      - db
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
-    networks:
-      - default
     ports:
       - '172.17.0.1:9120:9120'
     environment:
@@ -44,7 +43,11 @@ services:
     ## "http://host.docker.internal:8120"
     # extra_hosts:
     #   - host.docker.internal:host-gateway
-
+    networks:
+      - komodo
+    labels:
+      komodo.skip:
+      
   ## Deploy Periphery container using this block,
   ## or deploy the Periphery binary with systemd using 
   ## https://github.com/mbecker20/komodo/tree/main/scripts
@@ -53,8 +56,6 @@ services:
     restart: always
     logging:
       driver: ${COMPOSE_LOGGING_DRIVER:-local}
-    networks:
-      - default
     environment:
     volumes:
       ## Mount external docker socket
@@ -72,17 +73,14 @@ services:
       - stacks:/etc/komodo/stacks
       ## Optionally mount a path to store compose files
       # - /path/to/compose:/host/compose
-
-volumes:
-  # Mongo
-  mongo-data:
-  mongo-config:
-  # Core
-  repo-cache:
-  # Periphery
-  ssl-certs:
-  repos:
-  stacks:
-
+    networks:
+      - komodo
+labels:
+      komodo.skip:
+      
 networks:
-  default: {}
+  komodo:
+    name: komodo
+    external: false
+    
+  
