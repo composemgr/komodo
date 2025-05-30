@@ -40,8 +40,8 @@ services:
     ports:
       - '172.17.0.1:60236:9120'
     volumes:
-      - '/var/lib/srv/$USER/docker/mbecker20/komodo/latest/rootfs/data/komodo/repo-syncs:/syncs'
-      - '/var/lib/srv/$USER/docker/mbecker20/komodo/latest/rootfs/data/komodo/repo-cache:/repo-cache'
+      - '/var/lib/srv/$USER/docker/komodo/rootfs/data/komodo/repo-syncs:/syncs'
+      - '/var/lib/srv/$USER/docker/komodo/rootfs/data/komodo/repo-cache:/repo-cache'
     depends_on:
       db:
         condition: service_healthy
@@ -68,9 +68,9 @@ services:
     volumes:
       - '/proc:/proc'
       - '/var/run/docker.sock:/var/run/docker.sock'
-      - '/var/lib/srv/$USER/docker/mbecker20/komodo/latest/rootfs/config/komodo/repos:/etc/komodo'
-      - '/var/lib/srv/$USER/docker/mbecker20/komodo/latest/rootfs/data/komodo/repos:/etc/komodo/repos'
-      - '/var/lib/srv/$USER/docker/mbecker20/komodo/latest/rootfs/data/komodo/stacks:/etc/komodo/stacks'
+      - '/var/lib/srv/$USER/docker/komodo/rootfs/config/komodo/repos:/etc/komodo'
+      - '/var/lib/srv/$USER/docker/komodo/rootfs/data/komodo/repos:/etc/komodo/repos'
+      - '/var/lib/srv/$USER/docker/komodo/rootfs/data/komodo/stacks:/etc/komodo/stacks'
     networks:
       - komodo
     labels:
@@ -87,7 +87,7 @@ services:
       - TZ=${TZ:-America/New_York}
       - MONGO_INITDB_ROOT_PASSWORD=HLvAMvWdrXIK2davNf1Vzcceqf3PMjMr
     volumes:
-      - '/var/lib/srv/$USER/docker/db/mongo/komodo:/data'
+      - '/var/lib/srv/$USER/databases/mongo/komodo:/data'
     healthcheck:
       test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet||exit 1
       interval: 10s
