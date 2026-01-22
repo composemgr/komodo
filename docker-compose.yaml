@@ -85,7 +85,7 @@ services:
       TZ: ${TZ:-America/New_York}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
-      - './rootfs/db/mongo/komodo:/data'
+      - './rootfs/data/db/mongo/komodo:/data'
     healthcheck:
       test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet||exit 1
       interval: 10s
