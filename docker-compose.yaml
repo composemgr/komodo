@@ -40,8 +40,8 @@ services:
     ports:
       - '172.17.0.1:60236:9120'
     volumes:
-      - './rootfs/data/komodo/repo-syncs:/syncs'
-      - './rootfs/data/komodo/repo-cache:/repo-cache'
+      - './volumes/data/komodo/repo-syncs:/syncs'
+      - './volumes/data/komodo/repo-cache:/repo-cache'
     depends_on:
       db:
         condition: service_healthy
@@ -66,9 +66,9 @@ services:
       PERIPHERY_PASSKEYS: ${APP_SECRET_KEY:-changeme_passkey}
     volumes:
       - '/proc:/proc'
-      - './rootfs/config/komodo/repos:/etc/komodo'
-      - './rootfs/data/komodo/repos:/etc/komodo/repos'
-      - './rootfs/data/komodo/stacks:/etc/komodo/stacks'
+      - './volumes/config/komodo/repos:/etc/komodo'
+      - './volumes/data/komodo/repos:/etc/komodo/repos'
+      - './volumes/data/komodo/stacks:/etc/komodo/stacks'
       - '/var/run/docker.sock:/var/run/docker.sock'
     networks:
       - komodo
@@ -85,7 +85,7 @@ services:
       TZ: ${TZ:-America/New_York}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
-      - './rootfs/data/db/mongo/komodo:/data'
+      - './volumes/data/db/mongo/komodo:/data'
     healthcheck:
       test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet||exit 1
       interval: 10s
