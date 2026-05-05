@@ -41,8 +41,8 @@ BASE_DOMAIN_NAME=
 
 ## 📂 Volumes
 
-- `./rootfs/config/komodo` - Configuration files
-- `./rootfs/data/komodo` - Application data
+- `./volumes/config/komodo` - Configuration files
+- `./volumes/data/komodo` - Application data
 
 ## 🔐 Security
 
