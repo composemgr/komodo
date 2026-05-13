@@ -81,7 +81,6 @@ services:
       PERIPHERY_SSL_ENABLED: 'true'
       PERIPHERY_DISABLE_TERMINALS: 'false'
       PERIPHERY_ROOT_DIRECTORY: /etc/komodo
-      PERIPHERY_PASSKEYS: ${APP_SECRET_KEY:-changeme_passkey}
     volumes:
       - '/proc:/proc'
       - './volumes/config/komodo/repos:/etc/komodo'
