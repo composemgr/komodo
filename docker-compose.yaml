@@ -18,6 +18,8 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: komodo-core
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
       KOMODO_TITLE: ${APP_ORG_NAME:-Komodo}
       KOMODO_HOST: http://${BASE_HOST_NAME:-localhost}
       KOMODO_DISABLE_CONFIRM_DIALOG: 'false'
@@ -48,6 +50,24 @@ services:
         condition: service_healthy
     networks:
       - komodo
+      - proxy
+      - cloudflare
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://komodo-core:9120'
+      - 'cloudflare.hostname=komodo.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.komodo-core.entrypoints=http'
+      - 'traefik.http.routers.komodo-core-secure.tls=true'
+      - 'traefik.http.routers.komodo-core.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.komodo-core-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.komodo-core.middlewares=komodo-core-https-redirect'
+      - 'traefik.http.routers.komodo-core-secure.entrypoints=https'
+      - 'traefik.http.routers.komodo-core-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.komodo-core-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.komodo-core-secure.service=komodo-core'
+      - 'traefik.http.services.komodo-core.loadbalancer.server.port=9120'
 
   periphery:
     image: ghcr.io/mbecker20/periphery:latest
@@ -57,6 +77,7 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: komodo-periphery
       PERIPHERY_SSL_ENABLED: 'true'
       PERIPHERY_DISABLE_TERMINALS: 'false'
       PERIPHERY_ROOT_DIRECTORY: /etc/komodo
@@ -79,6 +100,7 @@ services:
     command: --quiet --wiredTigerCacheSizeGB 0.25
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: komodo-db
       MONGO_INITDB_ROOT_USERNAME: ${DB_USER_NAME:-komodo}
       MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-changeme_admin_password}
     volumes:
@@ -96,3 +118,7 @@ networks:
   komodo:
     name: komodo
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
