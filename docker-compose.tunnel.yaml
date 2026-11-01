@@ -1,0 +1,108 @@
+name: komodo
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: ghcr.io/mbecker20/komodo:latest
+    container_name: komodo-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: komodo-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+      KOMODO_TITLE: ${APP_ORG_NAME:-Komodo}
+      KOMODO_HOST: http://${BASE_HOST_NAME:-$HOSTNAME}
+      KOMODO_DISABLE_CONFIRM_DIALOG: 'false'
+      KOMODO_MONITORING_INTERVAL: '15-sec'
+      KOMODO_RESOURCE_POLL_INTERVAL: '5-min'
+      KOMODO_JWT_TTL: '1-day'
+      KOMODO_JWT_SECRET: ${APP_SECRET_KEY:-replace-with-a-random-16-byte-hex-string}
+      KOMODO_WEBHOOK_SECRET: ${RPC_SECRET:-replace-with-a-random-webhook-secret}
+      KOMODO_LOCAL_AUTH: 'true'
+      KOMODO_ENABLE_NEW_USERS: 'false'
+      KOMODO_DISABLE_USER_REGISTRATION: 'false'
+      KOMODO_DISABLE_NON_ADMIN_CREATE: 'false'
+      KOMODO_TRANSPARENT_MODE: 'false'
+      KOMODO_OIDC_ENABLED: 'false'
+      KOMODO_GITHUB_OAUTH_ENABLED: 'false'
+      KOMODO_GOOGLE_OAUTH_ENABLED: 'false'
+      KOMODO_DATABASE_ADDRESS: komodo-db:27017
+      KOMODO_DATABASE_USERNAME: ${DB_USER_NAME:-komodo}
+      KOMODO_DATABASE_PASSWORD: ${DB_ADMIN_PASS:-replace-with-a-random-password}
+      KOMODO_FIRST_SERVER: https://periphery:8120
+    volumes:
+      - './volumes/data/komodo/repo-syncs:/syncs:z'
+      - './volumes/data/komodo/repo-cache:/repo-cache:z'
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - 'cloudflare.enable=true'
+      - 'cloudflare.service=http://komodo-app:9120'
+      - 'cloudflare.hostname=${BASE_HOST_NAME:-$HOSTNAME}'
+    networks:
+      - komodo
+      - cloudflare
+
+  periphery:
+    image: ghcr.io/mbecker20/periphery:latest
+    container_name: komodo-periphery
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: komodo-periphery
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: komodo-periphery
+      PERIPHERY_SSL_ENABLED: 'true'
+      PERIPHERY_DISABLE_TERMINALS: 'false'
+      PERIPHERY_ROOT_DIRECTORY: /etc/komodo
+    volumes:
+      - '/proc:/proc'
+      - './volumes/config/komodo/repos:/etc/komodo:z'
+      - './volumes/data/komodo/repos:/etc/komodo/repos:z'
+      - './volumes/data/komodo/stacks:/etc/komodo/stacks:z'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    networks:
+      - komodo
+
+  db:
+    image: mongo:latest
+    container_name: komodo-db
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: komodo-db
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    command: --quiet --wiredTigerCacheSizeGB 0.25
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: komodo-db
+      MONGO_INITDB_ROOT_USERNAME: ${DB_USER_NAME:-komodo}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS:-replace-with-a-random-password}
+    volumes:
+      - './volumes/db/mongo/komodo:/data/db:z'
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', 'db.stats().ok']
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    networks:
+      - komodo
+
+networks:
+  komodo:
+    name: komodo
+    external: false
+  cloudflare:
+    external: true
